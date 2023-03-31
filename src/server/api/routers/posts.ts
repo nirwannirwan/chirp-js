@@ -27,6 +27,17 @@ const addUserDataToPost = async (posts: Post[]) => {
         code: "INTERNAL_SERVER_ERROR",
         message: "Author not found"
       });
+
+    if (!author.username) {
+      // user the ExternalUsername
+      if (!author.externalUsername) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `Author has no GitHub Account: ${author.id}`
+        });
+      }
+      author.username = author.externalUsername;
+    }
     return {
       post,
       author: {
