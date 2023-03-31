@@ -1,6 +1,11 @@
 import type { GetStaticProps, NextPage } from "next";
 import Head from "next/head";
-import { appRouter } from "~/server/api/root";
+import { TRPCError } from "@trpc/server";
+import { PageLayout } from "~/components/layout";
+import Image from "next/image";
+import { LoadingPage } from "~/components/loading";
+import { PostView } from "~/components/postview";
+import { generateSSGHelper } from "~/server/api/helpers/ssgHelper";
 
 import { api } from "~/utils/api";
 
@@ -23,7 +28,11 @@ const ProfileFeed = (props: { userId: string }) => {
 };
 
 const ProfilePage: NextPage<{ username: string }> = ({ username }) => {
-  const { data } = api.profile.getUserByUsername.useQuery({ username });
+  const { data, isLoading } = api.profile.getUserByUsername.useQuery({
+    username
+  });
+
+  if (isLoading) return <LoadingPage />;
 
   if (!data) return <div>Failed to load user</div>;
 
@@ -53,21 +62,8 @@ const ProfilePage: NextPage<{ username: string }> = ({ username }) => {
   );
 };
 
-import { createProxySSGHelpers } from "@trpc/react-query/ssg";
-import { prisma } from "~/server/db";
-import superjson from "superjson";
-import { TRPCError } from "@trpc/server";
-import { PageLayout } from "~/components/layout";
-import Image from "next/image";
-import { LoadingPage } from "~/components/loading";
-import { PostView } from "~/components/postview";
-
 export const getStaticProps: GetStaticProps = async (context) => {
-  const ssg = createProxySSGHelpers({
-    router: appRouter,
-    ctx: { prisma, userId: null },
-    transformer: superjson
-  });
+  const ssg = generateSSGHelper();
 
   const slug = context.params?.slug;
 
